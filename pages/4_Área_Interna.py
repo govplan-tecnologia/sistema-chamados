@@ -30,7 +30,6 @@ else:
         if df.empty:
             st.info("A base está vazia.")
         else:
-            # garante colunas
             colunas_necessarias = [
                 "data_abertura",
                 "solicitante",
@@ -51,7 +50,6 @@ else:
                 if coluna not in df.columns:
                     df[coluna] = ""
 
-            # padroniza
             df["status"] = df["status"].fillna("").astype(str).str.strip()
             df["solicitante"] = df["solicitante"].fillna("").astype(str).str.strip()
             df["descricao"] = df["descricao"].fillna("").astype(str).str.strip()
@@ -59,8 +57,14 @@ else:
 
             df.loc[df["status"] == "", "status"] = "Aguardando abertura"
 
+            df["data_abertura_original"] = df["data_abertura"].astype(str)
+
             if "data_abertura" in df.columns:
-                df["data_abertura"] = pd.to_datetime(df["data_abertura"], errors="coerce", dayfirst=True)
+                df["data_abertura"] = pd.to_datetime(
+                    df["data_abertura"],
+                    errors="coerce",
+                    dayfirst=True
+                )
 
             st.subheader("Filtros")
 
@@ -95,7 +99,6 @@ else:
             if filtro_status != "Todos":
                 resultado = resultado[resultado["status"] == filtro_status]
 
-            # ordena: aguardando > aberto > finalizado
             ordem_status = {
                 "Aguardando abertura": 0,
                 "Aberto": 1,
@@ -130,8 +133,12 @@ else:
                 st.subheader("Dados do chamado")
 
                 data_formatada = ""
-                if pd.notna(resultado.loc[indice, "data_abertura"]):
-                    data_formatada = resultado.loc[indice, "data_abertura"].strftime("%d/%m/%Y")
+                data_valor = resultado.loc[indice, "data_abertura"]
+
+                if pd.notna(data_valor):
+                    data_formatada = data_valor.strftime("%d/%m/%Y")
+                else:
+                    data_formatada = resultado.loc[indice, "data_abertura_original"]
 
                 col_a, col_b = st.columns(2)
 
@@ -153,12 +160,13 @@ else:
                 st.divider()
                 st.subheader("Atualização")
 
+                lista_status = ["Aguardando abertura", "Aberto", "Finalizado"]
+                status_atual = resultado.loc[indice, "status"]
+
                 novo_status = st.selectbox(
                     "Novo status",
-                    ["Aguardando abertura", "Aberto", "Finalizado"],
-                    index=["Aguardando abertura", "Aberto", "Finalizado"].index(resultado.loc[indice, "status"])
-                    if resultado.loc[indice, "status"] in ["Aguardando abertura", "Aberto", "Finalizado"]
-                    else 0
+                    lista_status,
+                    index=lista_status.index(status_atual) if status_atual in lista_status else 0
                 )
 
                 numero_chamado = st.text_input(
