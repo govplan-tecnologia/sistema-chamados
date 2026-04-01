@@ -1,7 +1,11 @@
 import streamlit as st
 from data.salvar_chamados import salvar_chamado
+from utils.styles import aplicar_estilo, mostrar_logo
 
 st.set_page_config(page_title="Abertura de Chamado", layout="centered")
+
+aplicar_estilo()
+mostrar_logo()
 
 st.title("Abertura de Chamado")
 st.write("Preencha as informações abaixo para abrir um chamado.")

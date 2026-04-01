@@ -9,22 +9,38 @@ def aplicar_estilo():
         background-color: #F4F7FB;
     }
 
-    /* Sidebar */
-    section[data-testid="stSidebar"] {
-        background-color: #132A63;
+    /* Container principal */
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
     }
 
-    /* Tudo da sidebar */
+    /* Sidebar */
+    section[data-testid="stSidebar"] {
+        background-color: #132A63 !important;
+    }
+
+    /* Textos da sidebar */
+    section[data-testid="stSidebar"],
     section[data-testid="stSidebar"] * {
         color: white !important;
     }
 
-    /* Página ativa no menu */
-    section[data-testid="stSidebar"] [data-testid="stSidebarNav"] a[aria-current="page"] {
+    /* Item ativo do menu */
+    section[data-testid="stSidebarNav"] a[aria-current="page"] {
         background-color: #7EDC12 !important;
         color: #132A63 !important;
+        border-radius: 10px !important;
+        font-weight: 700 !important;
+    }
+
+    section[data-testid="stSidebarNav"] a[aria-current="page"] * {
+        color: #132A63 !important;
+    }
+
+    /* Links do menu */
+    section[data-testid="stSidebarNav"] a {
         border-radius: 10px;
-        font-weight: bold;
     }
 
     /* Títulos */
@@ -32,30 +48,52 @@ def aplicar_estilo():
         color: #132A63 !important;
     }
 
-    /* Alertas */
-    div[data-testid="stAlert"] {
-        border-radius: 12px;
+    /* Texto geral */
+    p, label, span, div {
+        color: #132A63;
     }
 
-    /* Botões */
-    .stButton > button {
-        background-color: #7EDC12;
-        color: #132A63;
-        border: none;
-        border-radius: 10px;
-        font-weight: bold;
+    /* Botões normais e de formulário */
+    .stButton > button,
+    .stForm button[kind="primary"] {
+        background-color: #7EDC12 !important;
+        color: #132A63 !important;
+        border: none !important;
+        border-radius: 10px !important;
+        font-weight: 700 !important;
     }
 
-    .stButton > button:hover {
-        background-color: #6BC50F;
-        color: #132A63;
+    .stButton > button:hover,
+    .stForm button[kind="primary"]:hover {
+        background-color: #6BC50F !important;
+        color: #132A63 !important;
     }
 
     /* Inputs */
     .stTextInput input,
-    .stTextArea textarea,
-    .stSelectbox div[data-baseweb="select"] {
-        border-radius: 10px;
+    .stTextArea textarea {
+        border-radius: 10px !important;
+        border: 1px solid #D9E2F1 !important;
+        background-color: white !important;
+        color: #132A63 !important;
+    }
+
+    /* Selectbox */
+    div[data-baseweb="select"] > div {
+        border-radius: 10px !important;
+        border: 1px solid #D9E2F1 !important;
+        background-color: white !important;
+        color: #132A63 !important;
+    }
+
+    /* File uploader */
+    [data-testid="stFileUploader"] section {
+        border-radius: 12px !important;
+    }
+
+    /* Divider */
+    hr {
+        border-color: #D9E2F1 !important;
     }
     </style>
     """, unsafe_allow_html=True)
