@@ -8,11 +8,17 @@ st.set_page_config(page_title="Abertura de Chamado", layout="centered")
 aplicar_estilo()
 mostrar_logo()
 
+if "mensagem_sucesso" not in st.session_state:
+    st.session_state.mensagem_sucesso = False
+
+if "mensagem_erro" not in st.session_state:
+    st.session_state.mensagem_erro = ""
+
 st.title("Abertura de Chamado")
 st.write("Preencha as informações abaixo para abrir um chamado.")
 st.divider()
 
-with st.form("form_chamado", clear_on_submit=False):
+with st.form("form_chamado", clear_on_submit=True):
     solicitante = st.text_input("Solicitante")
     categoria = st.selectbox(
         "Categoria",
@@ -27,23 +33,11 @@ with st.form("form_chamado", clear_on_submit=False):
     enviar = st.form_submit_button("Abrir chamado")
 
     if enviar:
+        st.session_state.mensagem_sucesso = False
+        st.session_state.mensagem_erro = ""
+
         if not solicitante or not orgao or not descricao:
-            st.markdown(
-                """
-                <div style="
-                    background-color:#fee2e2;
-                    color:#991b1b;
-                    padding:14px 16px;
-                    border-radius:10px;
-                    border:1px solid #fecaca;
-                    font-weight:600;
-                    margin-top:16px;
-                ">
-                    Preencha pelo menos: Solicitante, Órgão e Descrição.
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            st.session_state.mensagem_erro = "Preencha pelo menos: Solicitante, Órgão e Descrição."
         else:
             nome_anexo = anexo.name if anexo else ""
 
@@ -63,54 +57,46 @@ with st.form("form_chamado", clear_on_submit=False):
 
                 try:
                     enviar_email_novo_chamado(dados)
-                    st.markdown(
-                        """
-                        <div style="
-                            background-color:#d1fae5;
-                            color:#065f46;
-                            padding:14px 16px;
-                            border-radius:10px;
-                            border:1px solid #a7f3d0;
-                            font-weight:600;
-                            margin-top:16px;
-                        ">
-                            ✅ Chamado salvo com sucesso e e-mail enviado!
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                except Exception as e_email:
-                    st.markdown(
-                        f"""
-                        <div style="
-                            background-color:#fef3c7;
-                            color:#92400e;
-                            padding:14px 16px;
-                            border-radius:10px;
-                            border:1px solid #fde68a;
-                            font-weight:600;
-                            margin-top:16px;
-                        ">
-                            ⚠️ Chamado salvo com sucesso, mas houve erro ao enviar o e-mail: {e_email}
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                except Exception:
+                    pass
+
+                st.session_state.mensagem_sucesso = True
 
             except Exception as e:
-                st.markdown(
-                    f"""
-                    <div style="
-                        background-color:#fee2e2;
-                        color:#991b1b;
-                        padding:14px 16px;
-                        border-radius:10px;
-                        border:1px solid #fecaca;
-                        font-weight:600;
-                        margin-top:16px;
-                    ">
-                        Erro ao salvar o chamado: {e}
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+                st.session_state.mensagem_erro = f"Erro ao salvar o chamado: {e}"
+
+if st.session_state.mensagem_sucesso:
+    st.markdown(
+        """
+        <div style="
+            background-color:#d1fae5;
+            color:#065f46;
+            padding:14px 16px;
+            border-radius:10px;
+            border:1px solid #a7f3d0;
+            font-weight:600;
+            margin-top:16px;
+        ">
+            ✅ Chamado aberto com sucesso!
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+if st.session_state.mensagem_erro:
+    st.markdown(
+        f"""
+        <div style="
+            background-color:#fee2e2;
+            color:#991b1b;
+            padding:14px 16px;
+            border-radius:10px;
+            border:1px solid #fecaca;
+            font-weight:600;
+            margin-top:16px;
+        ">
+            {st.session_state.mensagem_erro}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
