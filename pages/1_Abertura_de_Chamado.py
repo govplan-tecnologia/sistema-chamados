@@ -5,34 +5,12 @@ from data.salvar_chamados import salvar_chamado
 # aplicar_estilo()
 # mostrar_logo()
 
-if "chamado_salvo_ok" not in st.session_state:
-    st.session_state["chamado_salvo_ok"] = False
-
 st.title("Abertura de Chamado")
 st.caption("BUILD TESTE 01/04 - MSG OK")
 st.write("Preencha as informações abaixo para abrir um chamado.")
 st.divider()
 
-if st.session_state["chamado_salvo_ok"]:
-    st.markdown(
-        """
-        <div style="
-            background-color:#d1fae5;
-            color:#065f46;
-            padding:14px 16px;
-            border-radius:10px;
-            border:1px solid #a7f3d0;
-            font-weight:600;
-            margin-bottom:16px;
-        ">
-            Chamado salvo com sucesso!
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    st.session_state["chamado_salvo_ok"] = False
-
-with st.form("form_chamado", clear_on_submit=True):
+with st.form("form_chamado", clear_on_submit=False):
     solicitante = st.text_input("Solicitante")
     categoria = st.selectbox(
         "Categoria",
@@ -46,9 +24,11 @@ with st.form("form_chamado", clear_on_submit=True):
     anexo = st.file_uploader("Anexo (opcional)")
     enviar = st.form_submit_button("Abrir chamado")
 
+mensagem = st.empty()
+
 if enviar:
     if not solicitante or not orgao or not descricao:
-        st.markdown(
+        mensagem.markdown(
             """
             <div style="
                 background-color:#fee2e2;
@@ -80,10 +60,24 @@ if enviar:
 
         try:
             salvar_chamado(dados)
-            st.session_state["chamado_salvo_ok"] = True
-            st.rerun()
+            mensagem.markdown(
+                """
+                <div style="
+                    background-color:#d1fae5;
+                    color:#065f46;
+                    padding:14px 16px;
+                    border-radius:10px;
+                    border:1px solid #a7f3d0;
+                    font-weight:600;
+                    margin-top:16px;
+                ">
+                    Chamado salvo com sucesso!
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
         except Exception as e:
-            st.markdown(
+            mensagem.markdown(
                 f"""
                 <div style="
                     background-color:#fee2e2;
