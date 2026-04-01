@@ -1,5 +1,6 @@
 import streamlit as st
 from data.salvar_chamados import salvar_chamado
+from data.enviar_email import enviar_email_novo_chamado
 from utils.styles import aplicar_estilo, mostrar_logo
 
 st.set_page_config(page_title="Abertura de Chamado", layout="centered")
@@ -59,22 +60,43 @@ with st.form("form_chamado", clear_on_submit=False):
 
             try:
                 salvar_chamado(dados)
-                st.markdown(
-                    """
-                    <div style="
-                        background-color:#d1fae5;
-                        color:#065f46;
-                        padding:14px 16px;
-                        border-radius:10px;
-                        border:1px solid #a7f3d0;
-                        font-weight:600;
-                        margin-top:16px;
-                    ">
-                        ✅ Chamado salvo com sucesso!
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+
+                try:
+                    enviar_email_novo_chamado(dados)
+                    st.markdown(
+                        """
+                        <div style="
+                            background-color:#d1fae5;
+                            color:#065f46;
+                            padding:14px 16px;
+                            border-radius:10px;
+                            border:1px solid #a7f3d0;
+                            font-weight:600;
+                            margin-top:16px;
+                        ">
+                            ✅ Chamado salvo com sucesso e e-mail enviado!
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                except Exception as e_email:
+                    st.markdown(
+                        f"""
+                        <div style="
+                            background-color:#fef3c7;
+                            color:#92400e;
+                            padding:14px 16px;
+                            border-radius:10px;
+                            border:1px solid #fde68a;
+                            font-weight:600;
+                            margin-top:16px;
+                        ">
+                            ⚠️ Chamado salvo com sucesso, mas houve erro ao enviar o e-mail: {e_email}
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
             except Exception as e:
                 st.markdown(
                     f"""
