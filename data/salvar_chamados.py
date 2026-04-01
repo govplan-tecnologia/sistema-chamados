@@ -22,7 +22,6 @@ def get_sheet():
 
 def salvar_chamado(dados):
     agora_brasil = datetime.now(ZoneInfo("America/Sao_Paulo"))
-
     nova_linha = [
         agora_brasil.strftime("%d/%m/%Y %H:%M:%S"),
         dados.get("solicitante", ""),
@@ -38,7 +37,6 @@ def salvar_chamado(dados):
         "",
         ""
     ]
-
     sheet = get_sheet()
     sheet.append_row(nova_linha)
     return True
