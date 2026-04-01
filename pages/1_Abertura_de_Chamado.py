@@ -1,6 +1,8 @@
 import streamlit as st
 from data.salvar_chamados import salvar_chamado
 
+st.set_page_config(page_title="Abertura de Chamado", layout="centered")
+
 st.title("Abertura de Chamado")
 st.write("Preencha as informações abaixo para abrir um chamado.")
 st.divider()
@@ -19,7 +21,6 @@ with st.form("form_chamado", clear_on_submit=False):
     anexo = st.file_uploader("Anexo (opcional)")
     enviar = st.form_submit_button("Abrir chamado")
 
-    # ✅ if enviar DENTRO do with
     if enviar:
         if not solicitante or not orgao or not descricao:
             st.markdown(
