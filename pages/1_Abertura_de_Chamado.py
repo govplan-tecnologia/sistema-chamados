@@ -19,61 +19,11 @@ with st.form("form_chamado", clear_on_submit=False):
     anexo = st.file_uploader("Anexo (opcional)")
     enviar = st.form_submit_button("Abrir chamado")
 
-if enviar:
-    if not solicitante or not orgao or not descricao:
-        st.markdown(
-            """
-            <div style="
-                background-color:#fee2e2;
-                color:#991b1b;
-                padding:14px 16px;
-                border-radius:10px;
-                border:1px solid #fecaca;
-                font-weight:600;
-                margin-top:16px;
-            ">
-                Preencha pelo menos: Solicitante, Órgão e Descrição.
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    else:
-        nome_anexo = anexo.name if anexo else ""
-
-        dados = {
-            "solicitante": solicitante,
-            "categoria": categoria,
-            "orgao": orgao,
-            "login": login,
-            "url": url,
-            "link_gravacao": link_gravacao,
-            "descricao": descricao,
-            "anexo": nome_anexo
-        }
-
-        try:
-            salvar_chamado(dados)
-
+    # ✅ if enviar DENTRO do with
+    if enviar:
+        if not solicitante or not orgao or not descricao:
             st.markdown(
                 """
-                <div style="
-                    background-color:#d1fae5;
-                    color:#065f46;
-                    padding:14px 16px;
-                    border-radius:10px;
-                    border:1px solid #a7f3d0;
-                    font-weight:600;
-                    margin-top:16px;
-                ">
-                    Chamado salvo com sucesso!
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-        except Exception as e:
-            st.markdown(
-                f"""
                 <div style="
                     background-color:#fee2e2;
                     color:#991b1b;
@@ -83,8 +33,57 @@ if enviar:
                     font-weight:600;
                     margin-top:16px;
                 ">
-                    Erro ao salvar o chamado: {e}
+                    Preencha pelo menos: Solicitante, Órgão e Descrição.
                 </div>
                 """,
                 unsafe_allow_html=True
             )
+        else:
+            nome_anexo = anexo.name if anexo else ""
+
+            dados = {
+                "solicitante": solicitante,
+                "categoria": categoria,
+                "orgao": orgao,
+                "login": login,
+                "url": url,
+                "link_gravacao": link_gravacao,
+                "descricao": descricao,
+                "anexo": nome_anexo
+            }
+
+            try:
+                salvar_chamado(dados)
+                st.markdown(
+                    """
+                    <div style="
+                        background-color:#d1fae5;
+                        color:#065f46;
+                        padding:14px 16px;
+                        border-radius:10px;
+                        border:1px solid #a7f3d0;
+                        font-weight:600;
+                        margin-top:16px;
+                    ">
+                        ✅ Chamado salvo com sucesso!
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            except Exception as e:
+                st.markdown(
+                    f"""
+                    <div style="
+                        background-color:#fee2e2;
+                        color:#991b1b;
+                        padding:14px 16px;
+                        border-radius:10px;
+                        border:1px solid #fecaca;
+                        font-weight:600;
+                        margin-top:16px;
+                    ">
+                        Erro ao salvar o chamado: {e}
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
