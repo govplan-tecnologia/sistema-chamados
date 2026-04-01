@@ -8,14 +8,25 @@ st.set_page_config(page_title="Abertura de Chamado", layout="centered")
 aplicar_estilo()
 mostrar_logo()
 
+# Estado da mensagem
+if "mensagem_chamado" not in st.session_state:
+    st.session_state["mensagem_chamado"] = ""
+
+if "tipo_mensagem_chamado" not in st.session_state:
+    st.session_state["tipo_mensagem_chamado"] = ""
+
 st.title("Abertura de Chamado")
 st.write("Preencha as informações abaixo para abrir um chamado.")
 st.divider()
 
-# Placeholder fixo no topo para a mensagem
-banner = st.empty()
+# Exibe mensagem salva no rerun
+if st.session_state["mensagem_chamado"]:
+    if st.session_state["tipo_mensagem_chamado"] == "sucesso":
+        st.success(st.session_state["mensagem_chamado"])
+    else:
+        st.error(st.session_state["mensagem_chamado"])
 
-with st.form("form_chamado", clear_on_submit=False):
+with st.form("form_chamado", clear_on_submit=True):
     solicitante = st.text_input("Solicitante")
     categoria = st.selectbox(
         "Categoria",
@@ -30,9 +41,14 @@ with st.form("form_chamado", clear_on_submit=False):
     enviar = st.form_submit_button("Abrir chamado")
 
 if enviar:
+    # limpa mensagem anterior antes de processar
+    st.session_state["mensagem_chamado"] = ""
+    st.session_state["tipo_mensagem_chamado"] = ""
+
     if not solicitante or not orgao or not descricao:
-        banner.error("Preencha pelo menos: Solicitante, Órgão e Descrição.")
-        st.stop()
+        st.session_state["mensagem_chamado"] = "Preencha pelo menos: Solicitante, Órgão e Descrição."
+        st.session_state["tipo_mensagem_chamado"] = "erro"
+        st.rerun()
 
     nome_anexo = anexo.name if anexo else ""
 
@@ -56,12 +72,15 @@ if enviar:
             pass
 
         if resultado:
-            banner.success("Chamado aberto com sucesso!")
-            st.toast("Chamado aberto com sucesso!")
+            st.session_state["mensagem_chamado"] = "Chamado aberto com sucesso!"
+            st.session_state["tipo_mensagem_chamado"] = "sucesso"
         else:
-            banner.error("O chamado não foi salvo.")
-            st.toast("O chamado não foi salvo.")
+            st.session_state["mensagem_chamado"] = "O chamado não foi salvo."
+            st.session_state["tipo_mensagem_chamado"] = "erro"
+
+        st.rerun()
 
     except Exception as e:
-        banner.error(f"Erro ao salvar o chamado: {e}")
-        st.toast(f"Erro ao salvar o chamado: {e}")
+        st.session_state["mensagem_chamado"] = f"Erro ao salvar o chamado: {e}"
+        st.session_state["tipo_mensagem_chamado"] = "erro"
+        st.rerun()
