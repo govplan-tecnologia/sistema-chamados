@@ -8,31 +8,47 @@ st.set_page_config(page_title="Abertura de Chamado", layout="centered")
 aplicar_estilo()
 mostrar_logo()
 
-# 🔹 Controle de mensagem (ESSENCIAL)
-if "mostrar_msg" not in st.session_state:
-    st.session_state["mostrar_msg"] = False
-
-if "msg" not in st.session_state:
-    st.session_state["msg"] = ""
-
-if "tipo" not in st.session_state:
-    st.session_state["tipo"] = ""
-
 st.title("Abertura de Chamado")
 st.write("Preencha as informações abaixo para abrir um chamado.")
 st.divider()
 
-# 🔹 Exibição do banner no topo (ESSENCIAL)
-if st.session_state.get("mostrar_msg"):
-    if st.session_state.get("tipo") == "sucesso":
-        st.success(st.session_state.get("msg"))
-    else:
-        st.error(st.session_state.get("msg"))
+# Estado da mensagem
+if "status_banner" not in st.session_state:
+    st.session_state.status_banner = ""
 
-    # limpa depois de mostrar
-    st.session_state["mostrar_msg"] = False
+if "tipo_banner" not in st.session_state:
+    st.session_state.tipo_banner = ""
 
-# 🔹 Formulário
+# Placeholder FIXO no topo
+banner_placeholder = st.empty()
+
+def renderizar_banner():
+    if st.session_state.status_banner:
+        cor_fundo = "#d1fae5" if st.session_state.tipo_banner == "sucesso" else "#fee2e2"
+        cor_texto = "#065f46" if st.session_state.tipo_banner == "sucesso" else "#991b1b"
+        cor_borda = "#a7f3d0" if st.session_state.tipo_banner == "sucesso" else "#fecaca"
+
+        banner_placeholder.markdown(
+            f"""
+            <div style="
+                background-color:{cor_fundo};
+                color:{cor_texto};
+                padding:14px 16px;
+                border-radius:10px;
+                border:1px solid {cor_borda};
+                font-weight:600;
+                margin-top:16px;
+                margin-bottom:16px;
+            ">
+                {st.session_state.status_banner}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+# Renderiza a mensagem já salva, se existir
+renderizar_banner()
+
 with st.form("form_chamado", clear_on_submit=False):
     solicitante = st.text_input("Solicitante")
     categoria = st.selectbox(
@@ -47,13 +63,12 @@ with st.form("form_chamado", clear_on_submit=False):
     anexo = st.file_uploader("Anexo (opcional)")
     enviar = st.form_submit_button("Abrir chamado")
 
-# 🔹 Lógica de envio
 if enviar:
     if not solicitante or not orgao or not descricao:
-        st.session_state["msg"] = "Preencha pelo menos: Solicitante, Órgão e Descrição."
-        st.session_state["tipo"] = "erro"
-        st.session_state["mostrar_msg"] = True
-        st.rerun()
+        st.session_state.status_banner = "Preencha pelo menos: Solicitante, Órgão e Descrição."
+        st.session_state.tipo_banner = "erro"
+        renderizar_banner()
+        st.stop()
 
     nome_anexo = anexo.name if anexo else ""
 
@@ -77,17 +92,15 @@ if enviar:
             pass
 
         if resultado:
-            st.session_state["msg"] = "✅ Chamado aberto com sucesso!"
-            st.session_state["tipo"] = "sucesso"
+            st.session_state.status_banner = "✅ Chamado aberto com sucesso!"
+            st.session_state.tipo_banner = "sucesso"
         else:
-            st.session_state["msg"] = "O chamado não foi salvo."
-            st.session_state["tipo"] = "erro"
+            st.session_state.status_banner = "O chamado não foi salvo."
+            st.session_state.tipo_banner = "erro"
 
-        st.session_state["mostrar_msg"] = True
-        st.rerun()
+        renderizar_banner()
 
     except Exception as e:
-        st.session_state["msg"] = f"Erro ao salvar o chamado: {e}"
-        st.session_state["tipo"] = "erro"
-        st.session_state["mostrar_msg"] = True
-        st.rerun()
+        st.session_state.status_banner = f"Erro ao salvar o chamado: {e}"
+        st.session_state.tipo_banner = "erro"
+        renderizar_banner()
