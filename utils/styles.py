@@ -48,9 +48,9 @@ def aplicar_estilo():
         color: #132A63 !important;
     }
 
-    /* Texto geral */
-    p, label, span, div {
-        color: #132A63;
+    /* Texto geral - sem afetar todos os divs */
+    p, label, span {
+        color: #132A63 !important;
     }
 
     /* Botões normais e de formulário */
@@ -94,6 +94,16 @@ def aplicar_estilo():
     /* Divider */
     hr {
         border-color: #D9E2F1 !important;
+    }
+
+    /* Alertas do Streamlit */
+    [data-testid="stAlert"] {
+        border-radius: 10px !important;
+        margin-top: 16px !important;
+    }
+
+    [data-testid="stAlert"] * {
+        color: inherit !important;
     }
     </style>
     """, unsafe_allow_html=True)
