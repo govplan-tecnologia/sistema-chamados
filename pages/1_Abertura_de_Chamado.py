@@ -12,7 +12,6 @@ st.title("Abertura de Chamado")
 st.write("Preencha as informações abaixo para abrir um chamado.")
 st.divider()
 
-# Placeholder fixo para mensagens
 mensagem = st.empty()
 
 with st.form("form_chamado", clear_on_submit=True):
@@ -43,7 +42,7 @@ if enviar:
             "url": url,
             "link_gravacao": link_gravacao,
             "descricao": descricao,
-            "anexo": nome_anexo
+            "anexo": nome_anexo,
         }
 
         try:
@@ -61,7 +60,3 @@ if enviar:
 
         except Exception as e:
             mensagem.error(f"Erro ao salvar o chamado: {e}")
-
-            df_final.to_csv(CAMINHO_ARQUIVO, index=False, encoding="utf-8-sig")
-
-return True
