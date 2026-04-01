@@ -1,60 +1,76 @@
-import os
-import pandas as pd
-from datetime import datetime
-from zoneinfo import ZoneInfo
+import streamlit as st
+from data.salvar_chamados import salvar_chamado
+from data.enviar_email import enviar_email_novo_chamado
+from utils.styles import aplicar_estilo, mostrar_logo
 
-CAMINHO_ARQUIVO = "data/chamados.csv"
+st.set_page_config(page_title="Abertura de Chamado", layout="centered")
 
+aplicar_estilo()
+mostrar_logo()
 
-def salvar_chamado(dados):
-    agora_brasil = datetime.now(ZoneInfo("America/Sao_Paulo"))
+st.title("Abertura de Chamado")
+st.write("Preencha as informações abaixo para abrir um chamado.")
+st.divider()
 
-    novo_registro = {
-        "data_abertura": agora_brasil.strftime("%d/%m/%Y %H:%M:%S"),
-        "solicitante": dados.get("solicitante", ""),
-        "categoria": dados.get("categoria", ""),
-        "orgao": dados.get("orgao", ""),
-        "login": dados.get("login", ""),
-        "url": dados.get("url", ""),
-        "link_gravacao": dados.get("link_gravacao", ""),
-        "descricao": dados.get("descricao", ""),
-        "anexo": dados.get("anexo", ""),
-        "status": "Aguardando abertura",
-        "numero_chamado_externo": "",
-        "observacao_interna": "",
-        "data_fechamento": ""
-    }
+if "mensagem" not in st.session_state:
+    st.session_state.mensagem = None
+if "mensagem_tipo" not in st.session_state:
+    st.session_state.mensagem_tipo = None
 
-    colunas_necessarias = [
-        "data_abertura",
-        "solicitante",
-        "categoria",
-        "orgao",
-        "login",
-        "url",
-        "link_gravacao",
-        "descricao",
-        "anexo",
-        "status",
-        "numero_chamado_externo",
-        "observacao_interna",
-        "data_fechamento",
-    ]
+with st.form("form_chamado", clear_on_submit=True):
+    solicitante = st.text_input("Solicitante")
+    categoria = st.selectbox(
+        "Categoria",
+        ["Bug", "Sugestão de melhoria", "Robô de fontes"]
+    )
+    orgao = st.text_input("Órgão")
+    login = st.text_input("Login")
+    url = st.text_input("URL")
+    link_gravacao = st.text_input("Link da gravação")
+    descricao = st.text_area("Descrição")
+    anexo = st.file_uploader("Anexo (opcional)")
+    enviar = st.form_submit_button("Abrir chamado")
 
-    if os.path.exists(CAMINHO_ARQUIVO):
-        df = pd.read_csv(CAMINHO_ARQUIVO, encoding="utf-8-sig")
-
-        for coluna in colunas_necessarias:
-            if coluna not in df.columns:
-                df[coluna] = ""
-
-        df = df[colunas_necessarias]
+if enviar:
+    st.write("DEBUG - enviar clicado")
+    if not solicitante or not orgao or not descricao:
+        st.session_state.mensagem = "Preencha pelo menos: Solicitante, Órgão e Descrição."
+        st.session_state.mensagem_tipo = "erro"
     else:
-        df = pd.DataFrame(columns=colunas_necessarias)
+        nome_anexo = anexo.name if anexo else ""
+        dados = {
+            "solicitante": solicitante,
+            "categoria": categoria,
+            "orgao": orgao,
+            "login": login,
+            "url": url,
+            "link_gravacao": link_gravacao,
+            "descricao": descricao,
+            "anexo": nome_anexo
+        }
 
-    df_novo = pd.DataFrame([novo_registro], columns=colunas_necessarias)
-    df_final = pd.concat([df, df_novo], ignore_index=True)
+        try:
+            resultado = salvar_chamado(dados)
+            try:
+                enviar_email_novo_chamado(dados)
+            except Exception:
+                pass
 
-    df_final.to_csv(CAMINHO_ARQUIVO, index=False, encoding="utf-8-sig")
+            if resultado:
+                st.session_state.mensagem = "Chamado aberto com sucesso!"
+                st.session_state.mensagem_tipo = "sucesso"
+            else:
+                st.session_state.mensagem = "O chamado não foi salvo."
+                st.session_state.mensagem_tipo = "erro"
 
-    return True
+        except Exception as e:
+            st.session_state.mensagem = f"Erro ao salvar o chamado: {e}"
+            st.session_state.mensagem_tipo = "erro"
+
+st.write(f"DEBUG - mensagem no state: {st.session_state.mensagem}")
+
+if st.session_state.mensagem:
+    if st.session_state.mensagem_tipo == "sucesso":
+        st.success(st.session_state.mensagem)
+    else:
+        st.error(st.session_state.mensagem)
