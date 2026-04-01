@@ -5,16 +5,34 @@ from utils.styles import aplicar_estilo, mostrar_logo
 
 st.set_page_config(page_title="Abertura de Chamado", layout="centered")
 
-# aplicar_estilo()
-# mostrar_logo()
+aplicar_estilo()
+mostrar_logo()
+
+if "mensagem_chamado" not in st.session_state:
+    st.session_state.mensagem_chamado = ""
+
+if "tipo_mensagem_chamado" not in st.session_state:
+    st.session_state.tipo_mensagem_chamado = ""
 
 st.title("Abertura de Chamado")
 st.write("Preencha as informações abaixo para abrir um chamado.")
 st.divider()
 
+# Mensagem no topo da página
+if st.session_state.mensagem_chamado:
+    if st.session_state.tipo_mensagem_chamado == "success":
+        st.success(st.session_state.mensagem_chamado)
+    elif st.session_state.tipo_mensagem_chamado == "error":
+        st.error(st.session_state.mensagem_chamado)
+    else:
+        st.info(st.session_state.mensagem_chamado)
+
 with st.form("form_chamado", clear_on_submit=True):
     solicitante = st.text_input("Solicitante")
-    categoria = st.selectbox("Categoria", ["Bug", "Sugestão de melhoria", "Robô de fontes"])
+    categoria = st.selectbox(
+        "Categoria",
+        ["Bug", "Sugestão de melhoria", "Robô de fontes"]
+    )
     orgao = st.text_input("Órgão")
     login = st.text_input("Login")
     url = st.text_input("URL")
@@ -24,22 +42,29 @@ with st.form("form_chamado", clear_on_submit=True):
     enviar = st.form_submit_button("Abrir chamado")
 
 if enviar:
+    # limpa a mensagem anterior só quando tenta um novo envio
+    st.session_state.mensagem_chamado = ""
+    st.session_state.tipo_mensagem_chamado = ""
+
     if not solicitante or not orgao or not descricao:
-        st.error("Preencha pelo menos: Solicitante, Órgão e Descrição.")
-    else:
-        nome_anexo = anexo.name if anexo else ""
+        st.session_state.mensagem_chamado = "Preencha pelo menos: Solicitante, Órgão e Descrição."
+        st.session_state.tipo_mensagem_chamado = "error"
+        st.rerun()
 
-        dados = {
-            "solicitante": solicitante,
-            "categoria": categoria,
-            "orgao": orgao,
-            "login": login,
-            "url": url,
-            "link_gravacao": link_gravacao,
-            "descricao": descricao,
-            "anexo": nome_anexo,
-        }
+    nome_anexo = anexo.name if anexo else ""
 
+    dados = {
+        "solicitante": solicitante,
+        "categoria": categoria,
+        "orgao": orgao,
+        "login": login,
+        "url": url,
+        "link_gravacao": link_gravacao,
+        "descricao": descricao,
+        "anexo": nome_anexo,
+    }
+
+    try:
         resultado = salvar_chamado(dados)
 
         try:
@@ -48,7 +73,21 @@ if enviar:
             pass
 
         if resultado:
-            st.success("Chamado aberto com sucesso!")
-            st.write("DEBUG_OK")
+            st.session_state.mensagem_chamado = "Chamado aberto com sucesso!"
+            st.session_state.tipo_mensagem_chamado = "success"
         else:
-            st.error("O chamado não foi salvo.")
+            st.session_state.mensagem_chamado = "O chamado não foi salvo."
+            st.session_state.tipo_mensagem_chamado = "error"
+
+        st.rerun()
+
+    except Exception as e:
+        st.session_state.mensagem_chamado = f"Erro ao salvar o chamado: {e}"
+        st.session_state.tipo_mensagem_chamado = "error"
+        st.rerun()
+
+if st.session_state.mensagem_chamado:
+    if st.button("Limpar mensagem"):
+        st.session_state.mensagem_chamado = ""
+        st.session_state.tipo_mensagem_chamado = ""
+        st.rerun()
