@@ -39,14 +39,3 @@ def salvar_chamado(dados):
     sheet = get_sheet()
     sheet.append_row(nova_linha)
     return True
-```
-
-E remove o `google-api-python-client` do `requirements.txt`:
-```
-streamlit
-pandas
-plotly
-openpyxl
-gspread
-google-auth
-yagmail
