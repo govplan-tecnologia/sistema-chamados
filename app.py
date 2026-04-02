@@ -11,20 +11,70 @@ aplicar_estilo()
 mostrar_logo()
 
 st.title("Central de Chamados")
-
 st.subheader("Sistema interno para abertura e acompanhamento de chamados")
-
 st.divider()
 
-st.write("""
-Bem-vindo ao sistema de chamados.
+st.write("Bem-vindo ao sistema de chamados. Use o menu lateral à esquerda para navegar.")
+st.write("")
 
-Aqui você pode:
-- Abrir um novo chamado
-- Acompanhar seus chamados
-- Visualizar o dashboard geral
+col1, col2, col3 = st.columns(3)
 
-Use o menu lateral à esquerda para navegar.
-""")
+with col1:
+    st.markdown("""
+    <div style="
+        background-color:#132A63;
+        padding:30px 20px;
+        border-radius:16px;
+        text-align:center;
+        color:white;
+        min-height:160px;
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+    ">
+        <div style="font-size:36px;">📋</div>
+        <div style="font-size:20px; font-weight:700; margin-top:10px;">Abrir Chamado</div>
+        <div style="font-size:14px; margin-top:8px; opacity:0.85;">Registre um novo chamado de suporte</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-st.info("💡 Dica: Utilize seu nome para conseguir acompanhar seus chamados depois.")
+with col2:
+    st.markdown("""
+    <div style="
+        background-color:#1B3F8B;
+        padding:30px 20px;
+        border-radius:16px;
+        text-align:center;
+        color:white;
+        min-height:160px;
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+    ">
+        <div style="font-size:36px;">🔍</div>
+        <div style="font-size:20px; font-weight:700; margin-top:10px;">Acompanhamento</div>
+        <div style="font-size:14px; margin-top:8px; opacity:0.85;">Consulte o status dos seus chamados</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+    st.markdown("""
+    <div style="
+        background-color:#7EDC12;
+        padding:30px 20px;
+        border-radius:16px;
+        text-align:center;
+        color:#132A63;
+        min-height:160px;
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+    ">
+        <div style="font-size:36px;">📊</div>
+        <div style="font-size:20px; font-weight:700; margin-top:10px;">Dashboard</div>
+        <div style="font-size:14px; margin-top:8px; opacity:0.85;">Visualize os indicadores gerais</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.write("")
+st.info("💡 Certifique-se de digitar corretamente seu nome para conseguir acompanhar seus chamados depois.")
