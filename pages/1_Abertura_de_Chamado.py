@@ -15,10 +15,6 @@ st.divider()
 if "sucesso" not in st.session_state:
     st.session_state.sucesso = False
 
-if st.session_state.sucesso:
-    st.success("✅ Chamado aberto com sucesso!")
-    st.session_state.sucesso = False
-
 with st.form("form_chamado", clear_on_submit=True):
     solicitante = st.text_input("Solicitante")
     categoria = st.selectbox("Categoria", ["Bug", "Sugestão de melhoria", "Robô de fontes"])
@@ -29,6 +25,10 @@ with st.form("form_chamado", clear_on_submit=True):
     descricao = st.text_area("Descrição")
     anexo = st.file_uploader("Anexo (opcional)")
     enviar = st.form_submit_button("Abrir chamado")
+
+if st.session_state.sucesso:
+    st.success("✅ Chamado aberto com sucesso!")
+    st.session_state.sucesso = False
 
 if enviar:
     if not solicitante or not orgao or not descricao:
@@ -55,6 +55,4 @@ if enviar:
                 st.session_state.sucesso = True
                 st.rerun()
         except Exception as e:
-            import traceback
             st.error(f"Erro ao salvar o chamado: {e}")
-            st.code(traceback.format_exc())
