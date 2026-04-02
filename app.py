@@ -14,7 +14,7 @@ st.title("Central de Chamados")
 st.subheader("Sistema interno para abertura e acompanhamento de chamados")
 st.divider()
 
-st.write("Bem-vindo ao sistema de chamados. Use o menu lateral à esquerda para navegar.")
+st.write("Bem-vindo ao sistema de chamados. Escolha uma opção abaixo ou navegue pelo menu lateral.")
 st.write("")
 
 col1, col2, col3 = st.columns(3)
@@ -37,6 +37,9 @@ with col1:
         <div style="font-size:14px; margin-top:8px; opacity:0.85;">Registre um novo chamado de suporte</div>
     </div>
     """, unsafe_allow_html=True)
+    st.write("")
+    if st.button("Abrir chamado →", use_container_width=True, key="btn_abertura"):
+        st.switch_page("pages/1_Abertura_de_Chamado.py")
 
 with col2:
     st.markdown("""
@@ -56,6 +59,9 @@ with col2:
         <div style="font-size:14px; margin-top:8px; opacity:0.85;">Consulte o status dos seus chamados</div>
     </div>
     """, unsafe_allow_html=True)
+    st.write("")
+    if st.button("Ver meus chamados →", use_container_width=True, key="btn_acompanhamento"):
+        st.switch_page("pages/3_Acompanhamento.py")
 
 with col3:
     st.markdown("""
@@ -75,6 +81,9 @@ with col3:
         <div style="font-size:14px; margin-top:8px; opacity:0.85;">Visualize os indicadores gerais</div>
     </div>
     """, unsafe_allow_html=True)
+    st.write("")
+    if st.button("Ver dashboard →", use_container_width=True, key="btn_dashboard"):
+        st.switch_page("pages/2_Dashboard.py")
 
 st.write("")
 st.info("💡 Certifique-se de digitar corretamente seu nome para conseguir acompanhar seus chamados depois.")
