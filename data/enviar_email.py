@@ -19,16 +19,13 @@ def enviar_email_novo_chamado(dados_chamado: dict):
 Uma nova abertura de chamado foi registrada:
 
 🔴 Criticidade: {criticidade}
-
 Solicitante: {dados_chamado.get("solicitante", "")}
 Login: {dados_chamado.get("login", "")}
 Órgão: {dados_chamado.get("orgao", "")}
 URL: {dados_chamado.get("url", "")}
 Categoria: {dados_chamado.get("categoria", "")}
-
 Descrição:
 {dados_chamado.get("descricao", "")}
-
 Link gravação: {link_gravacao}
 """
 
