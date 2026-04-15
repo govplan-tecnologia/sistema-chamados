@@ -1,4 +1,6 @@
 import os
+import json
+import mimetypes
 import streamlit as st
 import gspread
 from datetime import datetime
@@ -16,35 +18,117 @@ def get_sheet():
     return client.open_by_key(SPREADSHEET_ID).sheet1
 
 
-def salvar_anexo(arquivo):
-    if arquivo is None:
-        return ""
-
+def garantir_pasta_uploads():
     pasta_uploads = "uploads"
     os.makedirs(pasta_uploads, exist_ok=True)
+    return pasta_uploads
+
+
+def limpar_nome_arquivo(nome_arquivo):
+    """
+    Remove caracteres problemáticos do nome do arquivo,
+    mantendo letras, números, ponto, traço e underscore.
+    """
+    nome = nome_arquivo.strip().replace(" ", "_")
+    permitidos = []
+    for char in nome:
+        if char.isalnum() or char in "._-":
+            permitidos.append(char)
+        else:
+            permitidos.append("_")
+    return "".join(permitidos)
+
+
+def salvar_arquivo(uploaded_file):
+    """
+    Salva um arquivo enviado pelo st.file_uploader e retorna
+    um dicionário com os metadados do anexo.
+    """
+    if uploaded_file is None:
+        return None
+
+    pasta_uploads = garantir_pasta_uploads()
 
     agora_brasil = datetime.now(ZoneInfo("America/Sao_Paulo"))
-    timestamp = agora_brasil.strftime("%Y%m%d_%H%M%S")
+    timestamp = agora_brasil.strftime("%Y%m%d_%H%M%S_%f")
 
-    nome_original = arquivo.name
-    nome_limpo = nome_original.replace(" ", "_")
-    nome_arquivo = f"{timestamp}_{nome_limpo}"
+    nome_original = uploaded_file.name
+    nome_limpo = limpar_nome_arquivo(nome_original)
+    nome_salvo = f"{timestamp}_{nome_limpo}"
 
-    caminho_arquivo = os.path.join(pasta_uploads, nome_arquivo)
+    caminho_arquivo = os.path.join(pasta_uploads, nome_salvo)
 
     with open(caminho_arquivo, "wb") as f:
-        f.write(arquivo.getbuffer())
+        f.write(uploaded_file.getbuffer())
 
-    return caminho_arquivo
+    mime_type = uploaded_file.type
+    if not mime_type:
+        mime_type, _ = mimetypes.guess_type(nome_original)
+        mime_type = mime_type or "application/octet-stream"
+
+    return {
+        "nome_original": nome_original,
+        "nome_salvo": nome_salvo,
+        "caminho": caminho_arquivo,
+        "tipo": mime_type,
+        "tamanho_bytes": uploaded_file.size if hasattr(uploaded_file, "size") else None
+    }
+
+
+def salvar_anexos(arquivos):
+    """
+    Recebe:
+    - None
+    - 1 arquivo
+    - lista de arquivos
+
+    Retorna sempre uma lista de anexos.
+    """
+    if arquivos is None:
+        return []
+
+    # Caso venha um único arquivo
+    if not isinstance(arquivos, list):
+        arquivos = [arquivos]
+
+    anexos_salvos = []
+
+    for arquivo in arquivos:
+        if arquivo is None:
+            continue
+
+        anexo = salvar_arquivo(arquivo)
+        if anexo:
+            anexos_salvos.append(anexo)
+
+    return anexos_salvos
 
 
 def salvar_chamado(dados):
+    """
+    Salva um chamado na planilha.
+
+    Espera receber no dicionário 'dados' algo como:
+    - anexo -> 1 arquivo
+    ou
+    - anexos -> lista de arquivos
+    """
+
     agora_brasil = datetime.now(ZoneInfo("America/Sao_Paulo"))
 
-    caminho_anexo = salvar_anexo(dados.get("anexo"))
+    # Compatibilidade:
+    # primeiro tenta lista de anexos; se não existir, tenta anexo único
+    arquivos_recebidos = dados.get("anexos")
+    if arquivos_recebidos is None:
+        arquivos_recebidos = dados.get("anexo")
+
+    anexos_salvos = salvar_anexos(arquivos_recebidos)
+
+    # Salva como JSON na coluna de anexos
+    anexos_json = json.dumps(anexos_salvos, ensure_ascii=False)
 
     nova_linha = [
-        agora_brasil.strftime("%d/%m/%Y %H:%M:%S"),  # data_hora
+        agora_brasil.strftime("%d/%m/%Y %H:%M:%S"),  # data_hora / data_abertura
         dados.get("solicitante", ""),
         dados.get("categoria", ""),
         dados.get("orgao", ""),
@@ -52,9 +136,9 @@ def salvar_chamado(dados):
         dados.get("url", ""),
         dados.get("link_gravacao", ""),
         dados.get("descricao", ""),
-        caminho_anexo,
-        dados.get("criticidade", ""),   # nova coluna
-        "Aguardando abertura",          # status
+        anexos_json,                         # coluna de anexos
+        dados.get("criticidade", ""),
+        "Aguardando abertura",               # status
         "",
         "",
         ""

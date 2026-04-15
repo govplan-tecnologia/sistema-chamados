@@ -1,4 +1,5 @@
 import os
+import mimetypes
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -22,6 +23,53 @@ def limpar_campos_atualizacao(status_atual="", numero_chamado="", observacao="")
     st.session_state["observacao_interna"] = str(observacao) if pd.notna(observacao) else ""
 
 
+def exibir_anexos(anexos):
+    if not anexos:
+        st.info("Sem anexo")
+        return
+
+    for i, anexo in enumerate(anexos, start=1):
+        caminho = anexo.get("caminho", "")
+        nome = anexo.get("nome_original", f"arquivo_{i}")
+        tipo = anexo.get("tipo", "")
+
+        st.markdown(f"**Arquivo {i}:** {nome}")
+
+        if not caminho:
+            st.warning("Anexo sem caminho salvo.")
+            st.divider()
+            continue
+
+        if not os.path.exists(caminho):
+            st.warning(f"Arquivo de anexo não encontrado: {caminho}")
+            st.divider()
+            continue
+
+        if not tipo:
+            tipo, _ = mimetypes.guess_type(caminho)
+            tipo = tipo or "application/octet-stream"
+
+        if tipo.startswith("image/"):
+            try:
+                st.image(caminho, caption=nome, use_container_width=True)
+            except Exception as e:
+                st.warning(f"Não foi possível carregar a imagem {nome}: {e}")
+        else:
+            try:
+                with open(caminho, "rb") as f:
+                    st.download_button(
+                        label=f"Baixar {nome}",
+                        data=f.read(),
+                        file_name=nome,
+                        mime=tipo,
+                        key=f"download_{i}_{nome}_{caminho}"
+                    )
+            except Exception as e:
+                st.warning(f"Não foi possível disponibilizar o arquivo {nome}: {e}")
+
+        st.divider()
+
+
 if senha != SENHA_ADMIN:
     st.warning("Digite a senha para liberar a edição.")
 else:
@@ -41,7 +89,7 @@ else:
             "url",
             "link_gravacao",
             "descricao",
-            "anexo",
+            "anexos",
             "status",
             "numero_chamado_externo",
             "observacao_interna",
@@ -50,14 +98,21 @@ else:
 
         for coluna in colunas_necessarias:
             if coluna not in df.columns:
-                df[coluna] = ""
+                if coluna == "anexos":
+                    df[coluna] = [[] for _ in range(len(df))]
+                else:
+                    df[coluna] = ""
 
         df["status"] = df["status"].fillna("").astype(str).str.strip()
         df["solicitante"] = df["solicitante"].fillna("").astype(str).str.strip()
         df["descricao"] = df["descricao"].fillna("").astype(str).str.strip()
         df["numero_chamado_externo"] = df["numero_chamado_externo"].fillna("").astype(str).str.strip()
         df["observacao_interna"] = df["observacao_interna"].fillna("").astype(str).str.strip()
-        df["anexo"] = df["anexo"].fillna("").astype(str).str.strip()
+        df["orgao"] = df["orgao"].fillna("").astype(str).str.strip()
+        df["login"] = df["login"].fillna("").astype(str).str.strip()
+        df["url"] = df["url"].fillna("").astype(str).str.strip()
+        df["link_gravacao"] = df["link_gravacao"].fillna("").astype(str).str.strip()
+        df["categoria"] = df["categoria"].fillna("").astype(str).str.strip()
 
         df.loc[df["status"] == "", "status"] = "Aguardando abertura"
 
@@ -165,19 +220,9 @@ else:
                 else "Sem descrição"
             )
 
-            st.write("**Anexo:**")
-            caminho_anexo = resultado.loc[indice, "anexo"]
-
-            if caminho_anexo:
-                if os.path.exists(caminho_anexo):
-                    try:
-                        st.image(caminho_anexo, caption="Imagem anexada", use_container_width=True)
-                    except Exception as e:
-                        st.warning(f"Não foi possível carregar a imagem: {e}")
-                else:
-                    st.warning(f"Arquivo de anexo não encontrado: {caminho_anexo}")
-            else:
-                st.info("Sem anexo")
+            st.write("**Anexos:**")
+            anexos_chamado = resultado.loc[indice, "anexos"]
+            exibir_anexos(anexos_chamado)
 
             st.divider()
             st.subheader("Atualização")

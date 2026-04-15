@@ -1,3 +1,4 @@
+import json
 import streamlit as st
 import pandas as pd
 import gspread
@@ -11,10 +12,56 @@ def get_sheet():
     return client.open_by_key(SPREADSHEET_ID).sheet1
 
 
+def normalizar_anexos(valor):
+    """
+    Converte o conteúdo da coluna 'anexos' para uma lista padronizada.
+
+    Suporta:
+    - vazio / NaN
+    - string simples antiga: "uploads/arquivo.jpg"
+    - JSON novo com lista de arquivos
+    """
+    if pd.isna(valor) or valor is None or str(valor).strip() == "":
+        return []
+
+    valor = str(valor).strip()
+
+    # Caso novo: JSON
+    if valor.startswith("[") or valor.startswith("{"):
+        try:
+            dados = json.loads(valor)
+
+            if isinstance(dados, dict):
+                dados = [dados]
+
+            if isinstance(dados, list):
+                anexos = []
+                for item in dados:
+                    if isinstance(item, dict):
+                        anexos.append({
+                            "nome_original": item.get("nome_original", ""),
+                            "caminho": item.get("caminho", ""),
+                            "tipo": item.get("tipo", "")
+                        })
+                return anexos
+        except Exception:
+            pass
+
+    # Caso antigo: caminho simples salvo em texto
+    return [{
+        "nome_original": valor.split("/")[-1],
+        "caminho": valor,
+        "tipo": ""
+    }]
+
+
 def ler_chamados():
     sheet = get_sheet()
     dados = sheet.get_all_records()
     df = pd.DataFrame(dados)
+
+    if df.empty:
+        return df
 
     if "data_abertura" in df.columns:
         df["data_abertura"] = pd.to_datetime(
@@ -22,6 +69,20 @@ def ler_chamados():
             format="%d/%m/%Y %H:%M:%S",
             errors="coerce"
         )
+
+    if "data_fechamento" in df.columns:
+        df["data_fechamento"] = pd.to_datetime(
+            df["data_fechamento"],
+            format="%d/%m/%Y %H:%M:%S",
+            errors="coerce"
+        )
+
+    # Ajuste importante: normalizar a coluna de anexos
+    # Troque "anexos" pelo nome exato da sua coluna, se estiver diferente
+    if "anexos" in df.columns:
+        df["anexos"] = df["anexos"].apply(normalizar_anexos)
+    else:
+        df["anexos"] = [[] for _ in range(len(df))]
 
     return df
 

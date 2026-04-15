@@ -17,7 +17,10 @@ if "sucesso" not in st.session_state:
 
 with st.form("form_chamado", clear_on_submit=True):
     solicitante = st.text_input("Solicitante")
-    categoria = st.selectbox("Categoria", ["Bug", "Sugestão de melhoria", "Robô de fontes"])
+    categoria = st.selectbox(
+        "Categoria",
+        ["Bug", "Sugestão de melhoria", "Robô de fontes"]
+    )
     orgao = st.text_input("Órgão")
     login = st.text_input("Login")
     url = st.text_input("URL")
@@ -41,7 +44,20 @@ with st.form("form_chamado", clear_on_submit=True):
     )
 
     descricao = st.text_area("Descrição")
-    anexo = st.file_uploader("Anexar imagem (opcional)", type=["png", "jpg", "jpeg"])
+
+    anexos = st.file_uploader(
+        "Anexar arquivos (opcional)",
+        type=[
+            "png", "jpg", "jpeg",
+            "pdf",
+            "xlsx", "xls", "csv",
+            "doc", "docx",
+            "txt"
+        ],
+        accept_multiple_files=True,
+        help="Você pode enviar uma ou mais imagens, planilhas, PDFs ou documentos."
+    )
+
     enviar = st.form_submit_button("Abrir chamado")
 
 if st.session_state.sucesso:
@@ -61,7 +77,7 @@ if enviar:
             "link_gravacao": link_gravacao,
             "criticidade": criticidade,
             "descricao": descricao,
-            "anexo": anexo
+            "anexos": anexos
         }
 
         try:
