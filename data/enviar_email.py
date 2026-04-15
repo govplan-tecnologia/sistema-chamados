@@ -24,8 +24,7 @@ Login: {dados_chamado.get("login", "")}
 Órgão: {dados_chamado.get("orgao", "")}
 URL: {dados_chamado.get("url", "")}
 Categoria: {dados_chamado.get("categoria", "")}
-Descrição:
-{dados_chamado.get("descricao", "")}
+Descrição: {dados_chamado.get("descricao", "")}
 Link gravação: {link_gravacao}
 """
 
