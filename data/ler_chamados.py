@@ -13,20 +13,11 @@ def get_sheet():
 
 
 def normalizar_anexos(valor):
-    """
-    Converte o conteúdo da coluna 'anexos' para uma lista padronizada.
-
-    Suporta:
-    - vazio / NaN
-    - string simples antiga: "uploads/arquivo.jpg"
-    - JSON novo com lista de arquivos
-    """
     if pd.isna(valor) or valor is None or str(valor).strip() == "":
         return []
 
     valor = str(valor).strip()
 
-    # Caso novo: JSON
     if valor.startswith("[") or valor.startswith("{"):
         try:
             dados = json.loads(valor)
@@ -40,18 +31,21 @@ def normalizar_anexos(valor):
                     if isinstance(item, dict):
                         anexos.append({
                             "nome_original": item.get("nome_original", ""),
+                            "nome_salvo": item.get("nome_salvo", ""),
                             "caminho": item.get("caminho", ""),
-                            "tipo": item.get("tipo", "")
+                            "tipo": item.get("tipo", ""),
+                            "tamanho_bytes": item.get("tamanho_bytes", None)
                         })
                 return anexos
         except Exception:
             pass
 
-    # Caso antigo: caminho simples salvo em texto
     return [{
         "nome_original": valor.split("/")[-1],
+        "nome_salvo": valor.split("/")[-1],
         "caminho": valor,
-        "tipo": ""
+        "tipo": "",
+        "tamanho_bytes": None
     }]
 
 
@@ -63,6 +57,7 @@ def ler_chamados():
     if df.empty:
         return df
 
+    # Padroniza data de abertura
     if "data_abertura" in df.columns:
         df["data_abertura"] = pd.to_datetime(
             df["data_abertura"],
@@ -70,6 +65,7 @@ def ler_chamados():
             errors="coerce"
         )
 
+    # Padroniza data de fechamento
     if "data_fechamento" in df.columns:
         df["data_fechamento"] = pd.to_datetime(
             df["data_fechamento"],
@@ -77,10 +73,11 @@ def ler_chamados():
             errors="coerce"
         )
 
-    # Ajuste importante: normalizar a coluna de anexos
-    # Troque "anexos" pelo nome exato da sua coluna, se estiver diferente
+    # Compatibilidade entre coluna antiga "anexo" e nova "anexos"
     if "anexos" in df.columns:
         df["anexos"] = df["anexos"].apply(normalizar_anexos)
+    elif "anexo" in df.columns:
+        df["anexos"] = df["anexo"].apply(normalizar_anexos)
     else:
         df["anexos"] = [[] for _ in range(len(df))]
 
