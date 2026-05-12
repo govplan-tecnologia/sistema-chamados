@@ -3,11 +3,12 @@ import json
 import mimetypes
 import streamlit as st
 import gspread
+import unicodedata
+import re
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
 SPREADSHEET_ID = "1huNRk11OX11ae-lv4NQX-OED3qgTzVHSTxTVV_dPI9o"
-
 
 def get_sheet():
     if "gcp_service_account" not in st.secrets:
@@ -17,27 +18,25 @@ def get_sheet():
     client = gspread.service_account_from_dict(creds_info)
     return client.open_by_key(SPREADSHEET_ID).sheet1
 
-
 def garantir_pasta_uploads():
     pasta_uploads = "uploads"
     os.makedirs(pasta_uploads, exist_ok=True)
     return pasta_uploads
 
-
 def limpar_nome_arquivo(nome_arquivo):
     """
-    Remove caracteres problemáticos do nome do arquivo,
-    mantendo letras, números, ponto, traço e underscore.
+    Remove acentos e caracteres problemáticos do nome do arquivo.
+    Exemplo: "PLANILHA GESTÃO UFJ.xlsx" -> "PLANILHA_GESTAO_UFJ.xlsx"
     """
-    nome = nome_arquivo.strip().replace(" ", "_")
-    permitidos = []
-    for char in nome:
-        if char.isalnum() or char in "._-":
-            permitidos.append(char)
-        else:
-            permitidos.append("_")
-    return "".join(permitidos)
-
+    # Normaliza para decompor caracteres acentuados (ex: 'ã' vira 'a' + '~')
+    nome = unicodedata.normalize('NFD', nome_arquivo)
+    # Filtra apenas caracteres ASCII (remove os acentos)
+    nome = nome.encode('ascii', 'ignore').decode('ascii')
+    # Substitui espaços por underscores
+    nome = nome.replace(" ", "_")
+    # Remove qualquer caractere que não seja letra, número, ponto, traço ou underscore
+    nome = re.sub(r'[^a-zA-Z0-9._-]', '', nome)
+    return nome
 
 def salvar_arquivo(uploaded_file):
     """
@@ -74,61 +73,34 @@ def salvar_arquivo(uploaded_file):
         "tamanho_bytes": uploaded_file.size if hasattr(uploaded_file, "size") else None
     }
 
-
 def salvar_anexos(arquivos):
-    """
-    Recebe:
-    - None
-    - 1 arquivo
-    - lista de arquivos
-
-    Retorna sempre uma lista de anexos.
-    """
     if arquivos is None:
         return []
 
-    # Caso venha um único arquivo
     if not isinstance(arquivos, list):
         arquivos = [arquivos]
 
     anexos_salvos = []
-
     for arquivo in arquivos:
         if arquivo is None:
             continue
-
         anexo = salvar_arquivo(arquivo)
         if anexo:
             anexos_salvos.append(anexo)
-
     return anexos_salvos
 
-
 def salvar_chamado(dados):
-    """
-    Salva um chamado na planilha.
-
-    Espera receber no dicionário 'dados' algo como:
-    - anexo -> 1 arquivo
-    ou
-    - anexos -> lista de arquivos
-    """
-
     agora_brasil = datetime.now(ZoneInfo("America/Sao_Paulo"))
 
-    # Compatibilidade:
-    # primeiro tenta lista de anexos; se não existir, tenta anexo único
     arquivos_recebidos = dados.get("anexos")
     if arquivos_recebidos is None:
         arquivos_recebidos = dados.get("anexo")
 
     anexos_salvos = salvar_anexos(arquivos_recebidos)
-
-    # Salva como JSON na coluna de anexos
     anexos_json = json.dumps(anexos_salvos, ensure_ascii=False)
 
     nova_linha = [
-        agora_brasil.strftime("%d/%m/%Y %H:%M:%S"),  # data_hora / data_abertura
+        agora_brasil.strftime("%d/%m/%Y %H:%M:%S"),
         dados.get("solicitante", ""),
         dados.get("categoria", ""),
         dados.get("orgao", ""),
@@ -136,9 +108,9 @@ def salvar_chamado(dados):
         dados.get("url", ""),
         dados.get("link_gravacao", ""),
         dados.get("descricao", ""),
-        anexos_json,                         # coluna de anexos
+        anexos_json,
         dados.get("criticidade", ""),
-        "Aguardando abertura",               # status
+        "Aguardando abertura",
         "",
         "",
         ""
@@ -146,5 +118,4 @@ def salvar_chamado(dados):
 
     sheet = get_sheet()
     sheet.append_row(nova_linha)
-
     return True

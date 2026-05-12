@@ -16,12 +16,10 @@ st.divider()
 SENHA_ADMIN = "govplan2026!"
 senha = st.text_input("Senha de acesso", type="password")
 
-
 def limpar_campos_atualizacao(status_atual="", numero_chamado="", observacao=""):
     st.session_state["novo_status"] = status_atual if status_atual else "Aguardando abertura"
     st.session_state["numero_chamado"] = str(numero_chamado) if pd.notna(numero_chamado) else ""
     st.session_state["observacao_interna"] = str(observacao) if pd.notna(observacao) else ""
-
 
 def exibir_anexos(anexos):
     if not anexos:
@@ -29,19 +27,22 @@ def exibir_anexos(anexos):
         return
 
     for i, anexo in enumerate(anexos, start=1):
-        caminho = anexo.get("caminho", "")
-        nome = anexo.get("nome_original", f"arquivo_{i}")
+        nome_salvo = anexo.get("nome_salvo", "")
+        nome_original = anexo.get("nome_original", f"arquivo_{i}")
         tipo = anexo.get("tipo", "")
 
-        st.markdown(f"**Arquivo {i}:** {nome}")
+        st.markdown(f"**Arquivo {i}:** {nome_original}")
 
-        if not caminho:
+        # Reconstrói o caminho de forma segura
+        caminho = os.path.join("uploads", nome_salvo) if nome_salvo else anexo.get("caminho", "")
+
+        if not nome_salvo and not caminho:
             st.warning("Anexo sem caminho salvo.")
             st.divider()
             continue
 
         if not os.path.exists(caminho):
-            st.warning(f"Arquivo de anexo não encontrado: {caminho}")
+            st.error(f"Arquivo de anexo não encontrado: {caminho}")
             st.divider()
             continue
 
@@ -51,49 +52,37 @@ def exibir_anexos(anexos):
 
         if tipo.startswith("image/"):
             try:
-                st.image(caminho, caption=nome, use_container_width=True)
+                st.image(caminho, caption=nome_original, use_container_width=True)
             except Exception as e:
-                st.warning(f"Não foi possível carregar a imagem {nome}: {e}")
+                st.warning(f"Não foi possível carregar a imagem {nome_original}: {e}")
         else:
             try:
                 with open(caminho, "rb") as f:
                     st.download_button(
-                        label=f"Baixar {nome}",
+                        label=f"Baixar {nome_original}",
                         data=f.read(),
-                        file_name=nome,
+                        file_name=nome_original,
                         mime=tipo,
-                        key=f"download_{i}_{nome}_{caminho}"
+                        key=f"download_{i}_{nome_original}_{nome_salvo}"
                     )
             except Exception as e:
-                st.warning(f"Não foi possível disponibilizar o arquivo {nome}: {e}")
+                st.warning(f"Não foi possível disponibilizar o arquivo {nome_original}: {e}")
 
         st.divider()
-
 
 if senha != SENHA_ADMIN:
     st.warning("Digite a senha para liberar a edição.")
 else:
     st.success("Acesso liberado.")
-
     df = ler_chamados()
 
     if df.empty:
         st.info("A base está vazia.")
     else:
         colunas_necessarias = [
-            "data_abertura",
-            "solicitante",
-            "categoria",
-            "orgao",
-            "login",
-            "url",
-            "link_gravacao",
-            "descricao",
-            "anexos",
-            "status",
-            "numero_chamado_externo",
-            "observacao_interna",
-            "data_fechamento"
+            "data_abertura", "solicitante", "categoria", "orgao", "login",
+            "url", "link_gravacao", "descricao", "anexos", "status",
+            "numero_chamado_externo", "observacao_interna", "data_fechamento"
         ]
 
         for coluna in colunas_necessarias:
@@ -115,48 +104,31 @@ else:
         df["categoria"] = df["categoria"].fillna("").astype(str).str.strip()
 
         df.loc[df["status"] == "", "status"] = "Aguardando abertura"
-
         df["data_abertura_original"] = df["data_abertura"].astype(str)
         df["data_abertura"] = pd.to_datetime(df["data_abertura"], errors="coerce", dayfirst=True)
 
         st.subheader("Filtros")
         col1, col2, col3 = st.columns(3)
-
         with col1:
             filtro_solicitante = st.text_input("Pesquisar por solicitante")
-
         with col2:
             filtro_palavra = st.text_input("Pesquisar por palavra-chave")
-
         with col3:
-            filtro_status = st.selectbox(
-                "Filtrar por status",
-                ["Aguardando abertura", "Aberto", "Finalizado", "Todos"]
-            )
+            filtro_status = st.selectbox("Filtrar por status", ["Aguardando abertura", "Aberto", "Finalizado", "Todos"])
 
         resultado = df.copy()
-
         if filtro_solicitante:
-            resultado = resultado[
-                resultado["solicitante"].str.contains(filtro_solicitante, case=False, na=False)
-            ]
-
+            resultado = resultado[resultado["solicitante"].str.contains(filtro_solicitante, case=False, na=False)]
         if filtro_palavra:
             resultado = resultado[
                 resultado["descricao"].str.contains(filtro_palavra, case=False, na=False) |
                 resultado["orgao"].astype(str).str.contains(filtro_palavra, case=False, na=False) |
                 resultado["numero_chamado_externo"].astype(str).str.contains(filtro_palavra, case=False, na=False)
             ]
-
         if filtro_status != "Todos":
             resultado = resultado[resultado["status"] == filtro_status]
 
-        ordem_status = {
-            "Aguardando abertura": 0,
-            "Aberto": 1,
-            "Finalizado": 2
-        }
-
+        ordem_status = {"Aguardando abertura": 0, "Aberto": 1, "Finalizado": 2}
         resultado["ordem_status"] = resultado["status"].map(ordem_status).fillna(99)
         resultado = resultado.sort_values(by=["ordem_status", "data_abertura"], ascending=[True, False])
 
@@ -166,7 +138,6 @@ else:
             st.info("Nenhum chamado encontrado com esses filtros.")
         else:
             opcoes = resultado.index.tolist()
-
             indice = st.selectbox(
                 "Selecione o chamado para editar",
                 opcoes,
@@ -193,20 +164,14 @@ else:
             st.subheader("Dados do chamado")
 
             data_valor = resultado.loc[indice, "data_abertura"]
-            data_formatada = (
-                data_valor.strftime("%d/%m/%Y")
-                if pd.notna(data_valor)
-                else resultado.loc[indice, "data_abertura_original"]
-            )
+            data_formatada = data_valor.strftime("%d/%m/%Y") if pd.notna(data_valor) else resultado.loc[indice, "data_abertura_original"]
 
             col_a, col_b = st.columns(2)
-
             with col_a:
                 st.write(f"**Data:** {data_formatada}")
                 st.write(f"**Solicitante:** {resultado.loc[indice, 'solicitante']}")
                 st.write(f"**Categoria:** {resultado.loc[indice, 'categoria']}")
                 st.write(f"**Status atual:** {resultado.loc[indice, 'status']}")
-
             with col_b:
                 st.write(f"**Órgão:** {resultado.loc[indice, 'orgao']}")
                 st.write(f"**Login:** {resultado.loc[indice, 'login']}")
@@ -214,50 +179,19 @@ else:
                 st.write(f"**Gravação:** {resultado.loc[indice, 'link_gravacao']}")
 
             st.write("**Descrição:**")
-            st.info(
-                resultado.loc[indice, "descricao"]
-                if resultado.loc[indice, "descricao"]
-                else "Sem descrição"
-            )
+            st.info(resultado.loc[indice, "descricao"] if resultado.loc[indice, "descricao"] else "Sem descrição")
 
             st.write("**Anexos:**")
-            anexos_chamado = resultado.loc[indice, "anexos"]
-            exibir_anexos(anexos_chamado)
+            exibir_anexos(resultado.loc[indice, "anexos"])
 
             st.divider()
             st.subheader("Atualização")
-
-            lista_status = ["Aguardando abertura", "Aberto", "Finalizado"]
-
-            st.selectbox(
-                "Novo status",
-                lista_status,
-                key="novo_status"
-            )
-
-            st.text_input(
-                "Nº do chamado",
-                key="numero_chamado"
-            )
-
-            st.text_area(
-                "Observação interna",
-                key="observacao_interna"
-            )
+            st.selectbox("Novo status", ["Aguardando abertura", "Aberto", "Finalizado"], key="novo_status")
+            st.text_input("Nº do chamado", key="numero_chamado")
+            st.text_area("Observação interna", key="observacao_interna")
 
             if st.button("Salvar alterações"):
-                data_fechamento = ""
-
-                if st.session_state["novo_status"] == "Finalizado":
-                    data_fechamento = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-
-                atualizar_chamado(
-                    indice,
-                    st.session_state["novo_status"],
-                    st.session_state["numero_chamado"],
-                    st.session_state["observacao_interna"],
-                    data_fechamento
-                )
-
+                data_fechamento = datetime.now().strftime("%d/%m/%Y %H:%M:%S") if st.session_state["novo_status"] == "Finalizado" else ""
+                atualizar_chamado(indice, st.session_state["novo_status"], st.session_state["numero_chamado"], st.session_state["observacao_interna"], data_fechamento)
                 st.success("Chamado atualizado com sucesso!")
                 st.rerun()
